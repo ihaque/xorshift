@@ -10,7 +10,9 @@ setup(
     author='Imran Haque',
     author_email='ihaque@cs.stanford.edu',
     license='MIT',
-    ext_modules = cythonize([Extension("xorgen", ["xorgen.pyx", "xoroshiro.c"],
-                             #extra_objects=["xoroshiro.o"],
-                             include_dirs=[numpy.get_include()])])
+    ext_modules = cythonize(
+        [Extension("xorshift.xorgen",
+                   ["xorshift/xorgen.pyx", "xorshift/xoroshiro.c"],
+                   include_dirs=[numpy.get_include()])]),
+    packages=['xorshift'],
 )
