@@ -33,11 +33,7 @@ cdef class Xoroshiro:
             self.buf = np.empty((ceil_num,), dtype=np.float32)
         return ceil_num
 
-    cpdef float uniform(self, float low=0.0, float high=1.0, num=None):
-        if num is None:
-            num = 1
-        assert low == 0.0
-        assert high == 1.0
+    cpdef np.ndarray uniform(self, size_t num):
         cdef size_t ceil_num = self.reallocate(num)
 
         cxorgen.xoroshiro(&self.state, <float*> self.buf.data, ceil_num)
@@ -70,13 +66,8 @@ cdef class Xorshift128plus:
             self.buf = np.empty((ceil_num,), dtype=np.float32)
         return ceil_num
 
-    cpdef float uniform(self, float low=0.0, float high=1.0, num=None):
-        if num is None:
-            num = 1
-        assert low == 0.0
-        assert high == 1.0
+    cpdef np.ndarray uniform(self, size_t num):
         cdef size_t ceil_num = self.reallocate(num)
-
         cxorgen.xorshift128plus(&self.state, <float*> self.buf.data, ceil_num)
 
         return self.buf[:num]
