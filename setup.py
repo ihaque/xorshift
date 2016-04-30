@@ -2,6 +2,10 @@ from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Build import cythonize
 import numpy
+import os
+
+# Suppress unused function warnings from clang arising in numpy code
+os.environ['CFLAGS'] = '%s %s' % (os.environ.get('CFLAGS', ''), '-Wno-unused-function')
 
 setup(
     name='xorshift',
