@@ -25,21 +25,31 @@ class _Generator(object):
         if low != 0.0:
             rvs += low
 
-        return rvs.reshape(size)
+        rvs = rvs.reshape(size)
+        if self.copy:
+            return np.copy(rvs)
+        else:
+            return rvs
 
-    def binomial(self, N, p, size=None):
+    def binomial(self, N, p, size=None, copy=False):
         nelts, size = _compute_n_elements(size)
         
-        return self.rng.binomial(N, p, nelts).reshape(size)
+        rvs = self.rng.binomial(N, p, nelts).reshape(size)
+        if self.copy:
+            return np.copy(rvs)
+        else:
+            return rvs
 
 
 class Xoroshiro(_Generator):
-    def __init__(self, seed=None):
+    def __init__(self, seed=None, copy=True):
+        self.copy = copy
         self.rng = xorgen.Xoroshiro(seed)
 
 
 class Xorshift128plus(_Generator):
-    def __init__(self, seed=None):
+    def __init__(self, seed=None, copy=True):
+        self.copy = copy
         self.rng = xorgen.Xorshift128plus(seed)
 
 
