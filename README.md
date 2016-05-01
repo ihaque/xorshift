@@ -4,7 +4,22 @@ C/Python implementation of Sebastiano Vigna's [xoroshiro128+ and xorshift128+](h
 
 This implementation vectorizes the 64-bit implementations of the xoroshiro128+
 and xorshift128+ generators to produce 4 single precision floats per iteration.
-They're *fast*: about 5 instructions per uniform float in the inner loop.
+They're *fast*: about 5 instructions per uniform float in the inner loop:
+
+(Benchmark results from a 3.1GHz Core i7 13" Retina MacBook Pro, Early 2015)
+```
+Benchmarking generation of 131072 Bin(50, 0.25) RVs, 10 iterations
+------------------------------------------------------------------
+numpy took 16.49 ms/iter,           125.84 ns per float
+xoroshiro took 4.56 ms/iter,        34.76 ns per float
+xoroshift128plus took 4.17 ms/iter, 31.79 ns per float
+
+Benchmarking generation of 131072 Uniform(0,1) RVs, 10 iterations
+-----------------------------------------------------------------
+numpy took 1.63 ms/iter,            12.40 ns per float
+xoroshiro took 0.13 ms/iter,        0.96 ns per float
+xoroshift128plus took 0.10 ms/iter, 0.73 ns per float
+```
 
 Currently, a subset of the `numpy.random.RandomState` interface is implemented:
 `Xoroshiro` or `Xorshift128plus` generators can be created with a seed (or no
