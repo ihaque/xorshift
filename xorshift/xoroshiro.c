@@ -85,25 +85,25 @@ void xorshift128plus_init(xor_rng_state* state, uint64_t seed){
     return;
 }
 
-static inline __m128 random_bits_to_uniform(__m128i random_bits) {
+static inline __m128 random_bits_to_uniform_1_2(__m128i random_bits) {
     const __m128i SP_MASK = _mm_set1_epi32(0x3F800000);
-    const __m128 MINUS_ONE = _mm_set1_ps(-1.0f);
 
     /* Mask off all but the mantissa bits. This is a bit wasteful of
      * the entropy, but it's quick. Then set the exponent to all 1s
      * (biased exponent) to get ^0 power.
      * This produces a uniform in the [1,2] range */
 
-    __m128 uniform_1_2 = (__m128) _mm_or_si128(_mm_srli_epi32(random_bits, 9),
-                                               SP_MASK);
+    return (__m128) _mm_or_si128(_mm_srli_epi32(random_bits, 9),
+                                 SP_MASK);
 
-    /* Since IEEE754 floats have an implicit 1, masking off everything
-     * leaves a float in the range [1.0, 2.0). Subtract 1 to bring it
-     * back into uniform space. */
-    return _mm_add_ps(uniform_1_2, MINUS_ONE);
 }
 
-static inline __m128 xoroshiro_vector_advance_uniform(__m128i* s0, __m128i* s1)
+static inline __m128 random_bits_to_uniform_0_1(__m128i random_bits) {
+    return _mm_add_ps(_mm_set1_ps(-1.0f),
+                      random_bits_to_uniform_1_2(random_bits));
+}
+
+static inline __m128i xoroshiro_vector_advance(__m128i* s0, __m128i* s1)
 {
     __m128i xmm1 = *s0;
     __m128i xmm2 = *s1;
@@ -125,9 +125,7 @@ static inline __m128 xoroshiro_vector_advance_uniform(__m128i* s0, __m128i* s1)
     xmm2 = _mm_or_si128(xmm2, xmm3);
     *s0 = xmm1;
     *s1 = xmm2;
-    xmm0 = xmm1;
-    xmm0  = _mm_add_epi64(xmm0, xmm2);
-    return random_bits_to_uniform(xmm0);
+    return _mm_add_epi64(xmm1, xmm2);
 }
 void xoroshiro(xor_rng_state* state, float* buf, size_t len)
 {
@@ -141,7 +139,8 @@ void xoroshiro(xor_rng_state* state, float* buf, size_t len)
     /* Fill buffer */
     for (;len > 0; len -= 4) {
         _mm_store_ps(buf,
-                     xoroshiro_vector_advance_uniform(&xmm1, &xmm2));
+                     random_bits_to_uniform_0_1(
+                         xoroshiro_vector_advance(&xmm1, &xmm2)));
         buf += 4;
     }
     /* Sync stored RNG state */
@@ -150,7 +149,7 @@ void xoroshiro(xor_rng_state* state, float* buf, size_t len)
     return;
 }
 
-static inline __m128 xorshift128plus_vector_advance_uniform(__m128i* s0,
+static inline __m128 xorshift128plus_vector_advance(__m128i* s0,
                                                             __m128i* s1)
 {
     __m128i xmm1 = *s0;
@@ -174,9 +173,7 @@ static inline __m128 xorshift128plus_vector_advance_uniform(__m128i* s0,
     xmm1 = xmm3;
     *s0 = xmm1;
     *s1 = xmm2;
-    xmm0 = xmm3;
-    xmm0 = _mm_add_epi64(xmm0, xmm2);
-    return random_bits_to_uniform(xmm0);
+    return _mm_add_epi64(xmm1, xmm2);
 }
 void xorshift128plus(xor_rng_state* state, float* buf, size_t len)
 {
@@ -190,7 +187,8 @@ void xorshift128plus(xor_rng_state* state, float* buf, size_t len)
     /* Fill buffer */
     for (;len > 0; len -= 4) {
         _mm_store_ps(buf,
-                     xorshift128plus_vector_advance_uniform(&xmm1, &xmm2));
+                     random_bits_to_uniform_0_1(
+                         xorshift128plus_vector_advance(&xmm1, &xmm2)));
         buf += 4;
     }
     /* Sync stored RNG state */
@@ -204,8 +202,10 @@ void xoroshiro_binomial(xor_rng_state* state,
                         float* output, const size_t len)
 {
     const __m128 ONE = _mm_set1_ps(1.0f);
-    const __m128 vp = _mm_set1_ps(p);
-    __m128 accum, uniform, success;
+    /* Use p + 1 because we'll generate Uniform(1,2) RVs in the inner loop
+     * instead of Uniform(0,1). This saves an FP add. */
+    const __m128 vp = _mm_set1_ps(p+1.0f);
+    __m128 accum, u_1_2, success;
 
     __m128i s0 = _mm_load_si128(&(state->s0));
     __m128i s1 = _mm_load_si128(&(state->s1)); 
@@ -215,9 +215,10 @@ void xoroshiro_binomial(xor_rng_state* state,
         accum = _mm_setzero_ps();
         for (int j=0; j < N; j++) {
             // Get a uniform
-            uniform = xoroshiro_vector_advance_uniform(&s0, &s1);
+            u_1_2 = random_bits_to_uniform_1_2(
+                        xoroshiro_vector_advance(&s0, &s1));
             // Compare to threshold and increment counter
-            success = _mm_and_ps(ONE, _mm_cmplt_ps(uniform, vp));
+            success = _mm_and_ps(ONE, _mm_cmplt_ps(u_1_2, vp));
             accum = _mm_add_ps(accum, success);
         }
         // accum now contains 4xBinom(N,p)
@@ -233,8 +234,10 @@ void xorshift128plus_binomial(xor_rng_state* state,
                         float* output, const size_t len)
 {
     const __m128 ONE = _mm_set1_ps(1.0f);
-    const __m128 vp = _mm_set1_ps(p);
-    __m128 accum, uniform, success;
+    /* Use p + 1 because we'll generate Uniform(1,2) RVs in the inner loop
+     * instead of Uniform(0,1). This saves an FP add. */
+    const __m128 vp = _mm_set1_ps(p + 1.0f);
+    __m128 accum, u_1_2, success;
 
     __m128i s0 = _mm_load_si128(&(state->s0));
     __m128i s1 = _mm_load_si128(&(state->s1)); 
@@ -244,9 +247,10 @@ void xorshift128plus_binomial(xor_rng_state* state,
         accum = _mm_setzero_ps();
         for (int j=0; j < N; j++) {
             // Get a uniform
-            uniform = xorshift128plus_vector_advance_uniform(&s0, &s1);
+            u_1_2 = random_bits_to_uniform_1_2(
+                        xorshift128plus_vector_advance(&s0, &s1));
             // Compare to threshold and increment counter
-            success = _mm_and_ps(ONE, _mm_cmplt_ps(uniform, vp));
+            success = _mm_and_ps(ONE, _mm_cmplt_ps(u_1_2, vp));
             accum = _mm_add_ps(accum, success);
         }
         // accum now contains 4xBinom(N,p)

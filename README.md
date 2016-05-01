@@ -10,15 +10,15 @@ They're *fast*: about 5 instructions per uniform float in the inner loop:
 ```
 Benchmarking generation of 131072 Bin(50, 0.25) RVs, 10 iterations
 ------------------------------------------------------------------
-numpy took 16.49 ms/iter,           125.84 ns per float
-xoroshiro took 4.56 ms/iter,        34.76 ns per float
-xoroshift128plus took 4.17 ms/iter, 31.79 ns per float
+numpy took 15.90 ms/iter,           121.30 ns per float
+xoroshiro took 3.88 ms/iter,        29.61 ns per float
+xoroshift128plus took 3.46 ms/iter, 26.41 ns per float
 
 Benchmarking generation of 131072 Uniform(0,1) RVs, 10 iterations
 -----------------------------------------------------------------
-numpy took 1.63 ms/iter,            12.40 ns per float
-xoroshiro took 0.13 ms/iter,        0.96 ns per float
-xoroshift128plus took 0.10 ms/iter, 0.73 ns per float
+numpy took 1.71 ms/iter,            13.07 ns per float
+xoroshiro took 0.11 ms/iter,        0.82 ns per float
+xoroshift128plus took 0.10 ms/iter, 0.76 ns per float
 ```
 
 Currently, a subset of the `numpy.random.RandomState` interface is implemented:
