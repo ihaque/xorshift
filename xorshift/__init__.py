@@ -1,5 +1,7 @@
 from operator import mul
 
+import numpy as np
+
 import xorshift.xorgen
 
 
