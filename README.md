@@ -4,7 +4,7 @@ C/Python implementation of Sebastiano Vigna's [xoroshiro128+ and xorshift128+](h
 
 This implementation vectorizes the 64-bit implementations of the xoroshiro128+
 and xorshift128+ generators to produce 4 single precision floats per iteration.
-They're *fast*: about 5 instructions per uniform float, amortized.
+They're *fast*: about 5 instructions per uniform float in the inner loop.
 
 Currently, a subset of the `numpy.random.RandomState` interface is implemented:
 `Xoroshiro` or `Xorshift128plus` generators can be created with a seed (or no
