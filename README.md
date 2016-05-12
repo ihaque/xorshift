@@ -4,6 +4,8 @@ C/Python implementation of Sebastiano Vigna's [xoroshiro128+ and xorshift128+](h
 
 This implementation vectorizes the 64-bit implementations of the xoroshiro128+
 and xorshift128+ generators to produce 4 single precision floats per iteration.
+As currently implemented, they have periods of 2^64, but that is not a fundamental
+limitation.
 They're *fast*: about 5 instructions per uniform float in the inner loop:
 
 (Benchmark results from a 3.1GHz Core i7 13" Retina MacBook Pro, Early 2015)
