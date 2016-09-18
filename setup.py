@@ -5,7 +5,7 @@ import numpy
 import os
 
 # Suppress unused function warnings from clang arising in numpy code
-os.environ['CFLAGS'] = '%s %s' % (os.environ.get('CFLAGS', ''), '-Wno-unused-function')
+os.environ['CFLAGS'] = '%s %s' % (os.environ.get('CFLAGS', ''), '-Wno-unused-function -std=c99')
 
 setup(
     name='xorshift',
