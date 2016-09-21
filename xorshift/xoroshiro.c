@@ -149,7 +149,7 @@ void xoroshiro(xor_rng_state* state, float* buf, size_t len)
     return;
 }
 
-static inline __m128 xorshift128plus_vector_advance(__m128i* s0,
+static inline __m128i xorshift128plus_vector_advance(__m128i* s0,
                                                             __m128i* s1)
 {
     __m128i xmm1 = *s0;

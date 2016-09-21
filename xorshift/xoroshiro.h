@@ -1,5 +1,6 @@
 #pragma once
 #include <emmintrin.h> /* SSE2 */
+#include <stdint.h>
 
 typedef struct _xor_rng_state {
     __m128i s0;
